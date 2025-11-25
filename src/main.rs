@@ -1,6 +1,6 @@
 use color_eyre::Result;
 use crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers};
-use ratatui::{ 
+use ratatui::{
     DefaultTerminal, Frame,
     layout::{Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
@@ -23,8 +23,8 @@ async fn main() -> color_eyre::Result<()> {
 
 #[derive(Debug, Clone, PartialEq)]
 enum AppState {
-    Confirmation,  // Main screen - shows file status and menu
-    EnvSetup,      // Interactive form for .env setup
+    Confirmation, // Main screen - shows file status and menu
+    EnvSetup,     // Interactive form for .env setup
     Installing,
     Success,
     Error(String),
@@ -67,9 +67,10 @@ impl FormData {
             self.error_message = "OpenAI API Key is required!".to_string();
             return false;
         }
-        
+
         if !self.openai_api_key.starts_with("sk-") {
-            self.error_message = "Invalid OpenAI API Key format (should start with 'sk-')".to_string();
+            self.error_message =
+                "Invalid OpenAI API Key format (should start with 'sk-')".to_string();
             return false;
         }
 
@@ -112,10 +113,10 @@ impl App {
         // Check if required files exist
         let env_exists = Self::find_file(".env");
         let config_exists = Self::find_file("config.yaml");
-        
+
         // Always start at Confirmation screen
         let initial_state = AppState::Confirmation;
-        
+
         // Determine initial menu selection based on what's missing
         let initial_menu = if !env_exists {
             MenuSelection::GenerateEnv
@@ -124,7 +125,7 @@ impl App {
         } else {
             MenuSelection::Proceed
         };
-        
+
         Self {
             running: true,
             state: initial_state,
@@ -145,12 +146,12 @@ impl App {
         if std::path::Path::new(filename).exists() {
             return true;
         }
-        
+
         let parent_path = format!("../../{}", filename);
         if std::path::Path::new(&parent_path).exists() {
             return true;
         }
-        
+
         false
     }
 
@@ -177,7 +178,7 @@ impl App {
     pub async fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
         while self.running {
             terminal.draw(|frame| self.render(frame))?;
-            
+
             match &self.state {
                 AppState::Confirmation => {
                     if let Some(action) = self.handle_confirmation_events()? {
@@ -185,17 +186,21 @@ impl App {
                             MenuSelection::Proceed => {
                                 if self.env_exists && self.config_exists {
                                     self.state = AppState::Installing;
-                                    self.logs.push("🚀 Starting Analytics installation...".to_string());
-                                    
+                                    self.logs
+                                        .push("🚀 Starting Analytics installation...".to_string());
+
                                     let result = self.run_docker_compose().await;
-                                    
+
                                     match result {
                                         Ok(_) => {
                                             self.state = AppState::Success;
                                             self.progress = 100.0;
                                         }
                                         Err(e) => {
-                                            self.state = AppState::Error(format!("Installation failed: {}", e));
+                                            self.state = AppState::Error(format!(
+                                                "Installation failed: {}",
+                                                e
+                                            ));
                                         }
                                     }
                                 }
@@ -205,7 +210,10 @@ impl App {
                             }
                             MenuSelection::GenerateConfig => {
                                 if let Err(e) = self.generate_config_yaml() {
-                                    self.state = AppState::Error(format!("Failed to generate config.yaml: {}", e));
+                                    self.state = AppState::Error(format!(
+                                        "Failed to generate config.yaml: {}",
+                                        e
+                                    ));
                                 } else {
                                     self.config_exists = true;
                                     // Update menu selection
@@ -226,7 +234,8 @@ impl App {
                     if let Some(proceed) = self.handle_form_events()? {
                         if proceed {
                             if let Err(e) = self.generate_env_file() {
-                                self.state = AppState::Error(format!("Failed to generate .env: {}", e));
+                                self.state =
+                                    AppState::Error(format!("Failed to generate .env: {}", e));
                             } else {
                                 self.env_exists = true;
                                 self.state = AppState::Confirmation;
@@ -407,8 +416,9 @@ impl App {
     fn generate_env_file(&self) -> Result<()> {
         let project_root = Self::get_project_root();
         let env_path = project_root.join(".env");
-        
-        let env_content = format!(r#"COMPOSE_PROJECT_NAME=analytics
+
+        let env_content = format!(
+            r#"COMPOSE_PROJECT_NAME=analytics
 PLATFORM=linux/amd64
 
 PROJECT_DIR=.
@@ -464,12 +474,16 @@ LOCAL_STORAGE=.
             self.form_data.ai_service_port,
             self.form_data.ai_service_port,
             self.form_data.openai_api_key,
-            uuid::Uuid::new_v4().to_string().split('-').next().unwrap_or("123"),
+            uuid::Uuid::new_v4()
+                .to_string()
+                .split('-')
+                .next()
+                .unwrap_or("123"),
             self.form_data.generation_model,
             self.form_data.host_port,
             self.form_data.ai_service_port,
         );
-        
+
         fs::write(env_path, env_content)?;
         Ok(())
     }
@@ -485,7 +499,7 @@ LOCAL_STORAGE=.
     async fn run_docker_compose(&mut self) -> Result<()> {
         self.add_log("🔨 Step 1/2: Building images (no cache)...");
         self.add_log("📦 Executing: docker compose build --no-cache");
-        
+
         let mut build_child = Command::new("docker")
             .args(&["compose", "build", "--no-cache"])
             .stdout(Stdio::piped())
@@ -524,7 +538,7 @@ LOCAL_STORAGE=.
         }
 
         let build_status = build_child.wait().await?;
-        
+
         if !build_status.success() {
             return Err(color_eyre::eyre::eyre!("Docker Compose build failed"));
         }
@@ -534,7 +548,7 @@ LOCAL_STORAGE=.
 
         self.add_log("🚀 Step 2/2: Starting services...");
         self.add_log("📦 Executing: docker compose up -d");
-        
+
         let mut up_child = Command::new("docker")
             .args(&["compose", "up", "-d"])
             .stdout(Stdio::piped())
@@ -573,7 +587,7 @@ LOCAL_STORAGE=.
         }
 
         let up_status = up_child.wait().await?;
-        
+
         if up_status.success() {
             self.add_log("✅ All services started successfully!");
             self.progress = 100.0;
@@ -585,7 +599,7 @@ LOCAL_STORAGE=.
 
     fn process_log_line(&mut self, line: &str) {
         let lower = line.to_lowercase();
-        
+
         if lower.contains("pulling") {
             if let Some(service) = self.extract_service_name(line) {
                 self.current_service = service.clone();
@@ -607,8 +621,12 @@ LOCAL_STORAGE=.
             }
         } else if lower.contains("started") {
             self.completed_services += 1;
-            self.progress = 50.0 + (self.completed_services as f64 / self.total_services as f64) * 50.0;
-            self.add_log(&format!("✅ Service started ({}/{})", self.completed_services, self.total_services));
+            self.progress =
+                50.0 + (self.completed_services as f64 / self.total_services as f64) * 50.0;
+            self.add_log(&format!(
+                "✅ Service started ({}/{})",
+                self.completed_services, self.total_services
+            ));
         } else if lower.contains("running") {
             self.add_log("🟢 Service is running");
         } else if lower.contains("error") || lower.contains("failed") {
@@ -619,8 +637,13 @@ LOCAL_STORAGE=.
     }
 
     fn extract_service_name(&self, line: &str) -> Option<String> {
-        let services = vec!["analytics-service", "qdrant", "northwind-db", "analytics-ui"];
-        
+        let services = vec![
+            "analytics-service",
+            "qdrant",
+            "northwind-db",
+            "analytics-ui",
+        ];
+
         for service in services {
             if line.to_lowercase().contains(service) {
                 return Some(service.to_string());
@@ -631,7 +654,7 @@ LOCAL_STORAGE=.
 
     fn add_log(&mut self, message: &str) {
         self.logs.push(message.to_string());
-        
+
         if self.logs.len() > 100 {
             self.logs.remove(0);
         }
@@ -649,40 +672,55 @@ LOCAL_STORAGE=.
 
     fn render_confirmation(&self, frame: &mut Frame) {
         let area = frame.area();
-        
+
         let chunks = Layout::default()
             .direction(Direction::Vertical)
             .margin(2)
             .constraints([
-                Constraint::Length(3),  // Title
-                Constraint::Min(10),    // Content
-                Constraint::Length(5),  // Menu
-                Constraint::Length(2),  // Help
+                Constraint::Length(3), // Title
+                Constraint::Min(10),   // Content
+                Constraint::Length(5), // Menu
+                Constraint::Length(2), // Help
             ])
             .split(area);
 
         // Title
         let title = Paragraph::new("🚀 Analytics Installer v0.1.0")
-            .style(Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD))
+            .style(
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
+            )
             .block(Block::default().borders(Borders::ALL))
             .centered();
         frame.render_widget(title, chunks[0]);
 
         // Content - File Status
         let all_files_exist = self.env_exists && self.config_exists;
-        
+
         let mut content_lines = vec![
             Line::from(""),
-            Line::from(Span::styled("Configuration Files:", Style::default().fg(if all_files_exist { Color::Green } else { Color::Yellow }))),
+            Line::from(Span::styled(
+                "Configuration Files:",
+                Style::default().fg(if all_files_exist {
+                    Color::Green
+                } else {
+                    Color::Yellow
+                }),
+            )),
             Line::from(""),
         ];
-        
+
         // .env status
         content_lines.push(Line::from(vec![
             Span::raw("  "),
             Span::styled(
                 if self.env_exists { "✓" } else { "✗" },
-                Style::default().fg(if self.env_exists { Color::Green } else { Color::Red })
+                Style::default().fg(if self.env_exists {
+                    Color::Green
+                } else {
+                    Color::Red
+                }),
             ),
             Span::raw(" .env"),
             if !self.env_exists {
@@ -691,13 +729,17 @@ LOCAL_STORAGE=.
                 Span::raw("")
             },
         ]));
-        
+
         // config.yaml status
         content_lines.push(Line::from(vec![
             Span::raw("  "),
             Span::styled(
                 if self.config_exists { "✓" } else { "✗" },
-                Style::default().fg(if self.config_exists { Color::Green } else { Color::Red })
+                Style::default().fg(if self.config_exists {
+                    Color::Green
+                } else {
+                    Color::Red
+                }),
             ),
             Span::raw(" config.yaml"),
             if !self.config_exists {
@@ -706,11 +748,16 @@ LOCAL_STORAGE=.
                 Span::raw("")
             },
         ]));
-        
+
         content_lines.push(Line::from(""));
-        
+
         if all_files_exist {
-            content_lines.push(Line::from(Span::styled("✅ All configuration files ready!", Style::default().fg(Color::Green).add_modifier(Modifier::BOLD))));
+            content_lines.push(Line::from(Span::styled(
+                "✅ All configuration files ready!",
+                Style::default()
+                    .fg(Color::Green)
+                    .add_modifier(Modifier::BOLD),
+            )));
             content_lines.push(Line::from(""));
             content_lines.push(Line::from("Services to be started:"));
             content_lines.push(Line::from("  • analytics-service"));
@@ -718,10 +765,17 @@ LOCAL_STORAGE=.
             content_lines.push(Line::from("  • northwind-db (PostgreSQL demo)"));
             content_lines.push(Line::from("  • analytics-ui"));
         } else {
-            content_lines.push(Line::from(Span::styled("⚠️  Some configuration files are missing!", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD))));
-            content_lines.push(Line::from("Please generate the missing files before proceeding."));
+            content_lines.push(Line::from(Span::styled(
+                "⚠️  Some configuration files are missing!",
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
+            )));
+            content_lines.push(Line::from(
+                "Please generate the missing files before proceeding.",
+            ));
         }
-        
+
         let content = Paragraph::new(content_lines)
             .block(Block::default().borders(Borders::ALL).title("Status"))
             .centered();
@@ -729,42 +783,57 @@ LOCAL_STORAGE=.
 
         // Menu
         let mut menu_lines = vec![Line::from("")];
-        
+
         // Show appropriate menu options
         if !self.env_exists {
             let style = if self.menu_selection == MenuSelection::GenerateEnv {
-                Style::default().fg(Color::Black).bg(Color::Cyan).add_modifier(Modifier::BOLD)
+                Style::default()
+                    .fg(Color::Black)
+                    .bg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD)
             } else {
                 Style::default().fg(Color::Cyan)
             };
             menu_lines.push(Line::from(Span::styled("[ Generate .env ]", style)));
         }
-        
+
         if !self.config_exists {
             let style = if self.menu_selection == MenuSelection::GenerateConfig {
-                Style::default().fg(Color::Black).bg(Color::Cyan).add_modifier(Modifier::BOLD)
+                Style::default()
+                    .fg(Color::Black)
+                    .bg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD)
             } else {
                 Style::default().fg(Color::Cyan)
             };
             menu_lines.push(Line::from(Span::styled("[ Generate config.yaml ]", style)));
         }
-        
+
         if all_files_exist {
             let style = if self.menu_selection == MenuSelection::Proceed {
-                Style::default().fg(Color::Black).bg(Color::Green).add_modifier(Modifier::BOLD)
+                Style::default()
+                    .fg(Color::Black)
+                    .bg(Color::Green)
+                    .add_modifier(Modifier::BOLD)
             } else {
                 Style::default().fg(Color::Green)
             };
-            menu_lines.push(Line::from(Span::styled("[ Proceed with Installation ]", style)));
+            menu_lines.push(Line::from(Span::styled(
+                "[ Proceed with Installation ]",
+                style,
+            )));
         }
-        
+
         let cancel_style = if self.menu_selection == MenuSelection::Cancel {
-            Style::default().fg(Color::Black).bg(Color::Red).add_modifier(Modifier::BOLD)
+            Style::default()
+                .fg(Color::Black)
+                .bg(Color::Red)
+                .add_modifier(Modifier::BOLD)
         } else {
             Style::default().fg(Color::Red)
         };
         menu_lines.push(Line::from(Span::styled("[ Cancel ]", cancel_style)));
-        
+
         let menu = Paragraph::new(menu_lines)
             .block(Block::default().borders(Borders::ALL).title("Menu"))
             .centered();
@@ -779,20 +848,24 @@ LOCAL_STORAGE=.
 
     fn render_env_setup(&self, frame: &mut Frame) {
         let area = frame.area();
-        
+
         let chunks = Layout::default()
             .direction(Direction::Vertical)
             .margin(2)
             .constraints([
-                Constraint::Length(3),  // Title
-                Constraint::Min(15),    // Form
-                Constraint::Length(2),  // Help
+                Constraint::Length(3), // Title
+                Constraint::Min(15),   // Form
+                Constraint::Length(2), // Help
             ])
             .split(area);
 
         // Title
         let title = Paragraph::new("🔧 Generate .env File")
-            .style(Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD))
+            .style(
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
+            )
             .block(Block::default().borders(Borders::ALL))
             .centered();
         frame.render_widget(title, chunks[0]);
@@ -807,20 +880,28 @@ LOCAL_STORAGE=.
         // Field 0: OpenAI API Key
         let field0_style = if self.form_data.current_field == 0 {
             if self.form_data.editing {
-                Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)
+                Style::default()
+                    .fg(Color::Green)
+                    .add_modifier(Modifier::BOLD)
             } else {
-                Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD)
             }
         } else {
             Style::default().fg(Color::White)
         };
-        
+
         let key_display = if self.form_data.openai_api_key.is_empty() {
             "_".repeat(40)
         } else {
-            format!("{}{}", &self.form_data.openai_api_key, "_".repeat(40 - self.form_data.openai_api_key.len().min(40)))
+            format!(
+                "{}{}",
+                &self.form_data.openai_api_key,
+                "_".repeat(40 - self.form_data.openai_api_key.len().min(40))
+            )
         };
-        
+
         form_lines.push(Line::from(vec![
             Span::styled("OpenAI API Key: ", field0_style),
             Span::styled(&key_display[..40.min(key_display.len())], field0_style),
@@ -831,14 +912,18 @@ LOCAL_STORAGE=.
         // Field 1: Generation Model
         let field1_style = if self.form_data.current_field == 1 {
             if self.form_data.editing {
-                Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)
+                Style::default()
+                    .fg(Color::Green)
+                    .add_modifier(Modifier::BOLD)
             } else {
-                Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD)
             }
         } else {
             Style::default().fg(Color::White)
         };
-        
+
         form_lines.push(Line::from(vec![
             Span::styled("Generation Model: ", field1_style),
             Span::styled(&self.form_data.generation_model, field1_style),
@@ -848,14 +933,18 @@ LOCAL_STORAGE=.
         // Field 2: UI Port
         let field2_style = if self.form_data.current_field == 2 {
             if self.form_data.editing {
-                Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)
+                Style::default()
+                    .fg(Color::Green)
+                    .add_modifier(Modifier::BOLD)
             } else {
-                Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD)
             }
         } else {
             Style::default().fg(Color::White)
         };
-        
+
         form_lines.push(Line::from(vec![
             Span::styled("UI Port: ", field2_style),
             Span::styled(&self.form_data.host_port, field2_style),
@@ -865,14 +954,18 @@ LOCAL_STORAGE=.
         // Field 3: AI Service Port
         let field3_style = if self.form_data.current_field == 3 {
             if self.form_data.editing {
-                Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)
+                Style::default()
+                    .fg(Color::Green)
+                    .add_modifier(Modifier::BOLD)
             } else {
-                Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD)
             }
         } else {
             Style::default().fg(Color::White)
         };
-        
+
         form_lines.push(Line::from(vec![
             Span::styled("AI Service Port: ", field3_style),
             Span::styled(&self.form_data.ai_service_port, field3_style),
@@ -881,14 +974,23 @@ LOCAL_STORAGE=.
 
         if !self.form_data.error_message.is_empty() {
             form_lines.push(Line::from(""));
-            form_lines.push(Line::from(Span::styled(&self.form_data.error_message, Style::default().fg(Color::Red).add_modifier(Modifier::BOLD))));
+            form_lines.push(Line::from(Span::styled(
+                &self.form_data.error_message,
+                Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+            )));
         }
 
         form_lines.push(Line::from(""));
-        form_lines.push(Line::from(Span::styled("* Required field", Style::default().fg(Color::DarkGray))));
+        form_lines.push(Line::from(Span::styled(
+            "* Required field",
+            Style::default().fg(Color::DarkGray),
+        )));
 
-        let form = Paragraph::new(form_lines)
-            .block(Block::default().borders(Borders::ALL).title("Configuration Form"));
+        let form = Paragraph::new(form_lines).block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("Configuration Form"),
+        );
         frame.render_widget(form, chunks[1]);
 
         // Help
@@ -897,7 +999,7 @@ LOCAL_STORAGE=.
         } else {
             "↑↓ to navigate, Enter to edit, Ctrl+S to save, Esc to cancel"
         };
-        
+
         let help = Paragraph::new(help_text)
             .style(Style::default().fg(Color::DarkGray))
             .centered();
@@ -906,7 +1008,7 @@ LOCAL_STORAGE=.
 
     fn render_installing(&self, frame: &mut Frame) {
         let area = frame.area();
-        
+
         let chunks = Layout::default()
             .direction(Direction::Vertical)
             .margin(2)
@@ -920,7 +1022,11 @@ LOCAL_STORAGE=.
             .split(area);
 
         let title = Paragraph::new("🔄 Installing Analytics... Please wait")
-            .style(Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD))
+            .style(
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
+            )
             .block(Block::default().borders(Borders::ALL))
             .centered();
         frame.render_widget(title, chunks[0]);
@@ -928,7 +1034,7 @@ LOCAL_STORAGE=.
         let progress_width = (chunks[1].width as f64 - 10.0) * (self.progress / 100.0);
         let filled = "█".repeat(progress_width as usize);
         let empty = "░".repeat((chunks[1].width as usize - 10 - progress_width as usize).max(0));
-        
+
         let progress_text = format!("[{}{}] {:.0}%", filled, empty, self.progress);
         let progress = Paragraph::new(progress_text)
             .style(Style::default().fg(Color::Cyan))
@@ -937,37 +1043,53 @@ LOCAL_STORAGE=.
         frame.render_widget(progress, chunks[1]);
 
         let current = if !self.current_service.is_empty() {
-            format!("Current: {} ({}/{})", self.current_service, self.completed_services, self.total_services)
+            format!(
+                "Current: {} ({}/{})",
+                self.current_service, self.completed_services, self.total_services
+            )
         } else {
             "Initializing...".to_string()
         };
-        
+
         let current_widget = Paragraph::new(current)
             .style(Style::default().fg(Color::Green))
             .block(Block::default().borders(Borders::ALL).title("Status"))
             .centered();
         frame.render_widget(current_widget, chunks[2]);
 
-        let log_lines: Vec<Line> = self.logs.iter().map(|log| {
-            let style = if log.contains("❌") || log.contains("error") {
-                Style::default().fg(Color::Red)
-            } else if log.contains("✅") || log.contains("started") {
-                Style::default().fg(Color::Green)
-            } else if log.contains("⬇️") {
-                Style::default().fg(Color::Blue)
-            } else if log.contains("🔨") {
-                Style::default().fg(Color::Yellow)
-            } else {
-                Style::default().fg(Color::White)
-            };
-            
-            Line::from(Span::styled(log.clone(), style))
-        }).collect();
+        let log_lines: Vec<Line> = self
+            .logs
+            .iter()
+            .map(|log| {
+                let style = if log.contains("❌") || log.contains("error") {
+                    Style::default().fg(Color::Red)
+                } else if log.contains("✅") || log.contains("started") {
+                    Style::default().fg(Color::Green)
+                } else if log.contains("⬇️") {
+                    Style::default().fg(Color::Blue)
+                } else if log.contains("🔨") {
+                    Style::default().fg(Color::Yellow)
+                } else {
+                    Style::default().fg(Color::White)
+                };
+
+                Line::from(Span::styled(log.clone(), style))
+            })
+            .collect();
 
         let logs_widget = Paragraph::new(log_lines)
-            .block(Block::default().borders(Borders::ALL).title("📋 Installation Logs"))
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .title("📋 Installation Logs"),
+            )
             .wrap(Wrap { trim: false })
-            .scroll((self.logs.len().saturating_sub(chunks[3].height as usize - 2) as u16, 0));
+            .scroll((
+                self.logs
+                    .len()
+                    .saturating_sub(chunks[3].height as usize - 2) as u16,
+                0,
+            ));
         frame.render_widget(logs_widget, chunks[3]);
 
         let help = Paragraph::new("Press Ctrl+C to cancel")
@@ -978,7 +1100,7 @@ LOCAL_STORAGE=.
 
     fn render_success(&self, frame: &mut Frame) {
         let area = frame.area();
-        
+
         let chunks = Layout::default()
             .direction(Direction::Vertical)
             .margin(2)
@@ -991,31 +1113,53 @@ LOCAL_STORAGE=.
             .split(area);
 
         let title = Paragraph::new("✅ Installation Complete!")
-            .style(Style::default().fg(Color::Green).add_modifier(Modifier::BOLD))
+            .style(
+                Style::default()
+                    .fg(Color::Green)
+                    .add_modifier(Modifier::BOLD),
+            )
             .block(Block::default().borders(Borders::ALL))
             .centered();
         frame.render_widget(title, chunks[0]);
 
         let message = vec![
             Line::from(""),
-            Line::from(Span::styled("Analytics has been successfully installed!", Style::default().fg(Color::Green).add_modifier(Modifier::BOLD))),
+            Line::from(Span::styled(
+                "Analytics has been successfully installed!",
+                Style::default()
+                    .fg(Color::Green)
+                    .add_modifier(Modifier::BOLD),
+            )),
             Line::from(""),
             Line::from("All services are now running. You can access Analytics UI at:"),
-            Line::from(Span::styled("http://localhost:3000", Style::default().fg(Color::Cyan).add_modifier(Modifier::UNDERLINED))),
+            Line::from(Span::styled(
+                "http://localhost:3000",
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::UNDERLINED),
+            )),
             Line::from(""),
         ];
-        
+
         let message_widget = Paragraph::new(message)
             .block(Block::default().borders(Borders::ALL).title("Success"))
             .centered();
         frame.render_widget(message_widget, chunks[1]);
 
-        let log_lines: Vec<Line> = self.logs.iter().rev().take(10).rev().map(|log| {
-            Line::from(Span::styled(log.clone(), Style::default().fg(Color::White)))
-        }).collect();
+        let log_lines: Vec<Line> = self
+            .logs
+            .iter()
+            .rev()
+            .take(10)
+            .rev()
+            .map(|log| Line::from(Span::styled(log.clone(), Style::default().fg(Color::White))))
+            .collect();
 
-        let logs_widget = Paragraph::new(log_lines)
-            .block(Block::default().borders(Borders::ALL).title("Installation Summary"));
+        let logs_widget = Paragraph::new(log_lines).block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("Installation Summary"),
+        );
         frame.render_widget(logs_widget, chunks[2]);
 
         let help = Paragraph::new("Press Ctrl+C to exit")
@@ -1026,7 +1170,7 @@ LOCAL_STORAGE=.
 
     fn render_error(&self, frame: &mut Frame, error: &str) {
         let area = frame.area();
-        
+
         let chunks = Layout::default()
             .direction(Direction::Vertical)
             .margin(2)
@@ -1046,25 +1190,43 @@ LOCAL_STORAGE=.
 
         let message = vec![
             Line::from(""),
-            Line::from(Span::styled("An error occurred:", Style::default().fg(Color::Red).add_modifier(Modifier::BOLD))),
+            Line::from(Span::styled(
+                "An error occurred:",
+                Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+            )),
             Line::from(""),
             Line::from(Span::styled(error, Style::default().fg(Color::White))),
             Line::from(""),
         ];
-        
+
         let message_widget = Paragraph::new(message)
-            .block(Block::default().borders(Borders::ALL).title("Error Details"))
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .title("Error Details"),
+            )
             .wrap(Wrap { trim: false });
         frame.render_widget(message_widget, chunks[1]);
 
-        let log_lines: Vec<Line> = self.logs.iter().map(|log| {
-            Line::from(Span::styled(log.clone(), Style::default().fg(Color::White)))
-        }).collect();
+        let log_lines: Vec<Line> = self
+            .logs
+            .iter()
+            .map(|log| Line::from(Span::styled(log.clone(), Style::default().fg(Color::White))))
+            .collect();
 
         let logs_widget = Paragraph::new(log_lines)
-            .block(Block::default().borders(Borders::ALL).title("Installation Logs"))
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .title("Installation Logs"),
+            )
             .wrap(Wrap { trim: false })
-            .scroll((self.logs.len().saturating_sub(chunks[2].height as usize - 2) as u16, 0));
+            .scroll((
+                self.logs
+                    .len()
+                    .saturating_sub(chunks[2].height as usize - 2) as u16,
+                0,
+            ));
         frame.render_widget(logs_widget, chunks[2]);
 
         let help = Paragraph::new("Press Ctrl+C to exit")
