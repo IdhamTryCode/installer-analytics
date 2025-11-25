@@ -431,9 +431,9 @@ ANALYTICS_UI_PORT=3000
 IBIS_SERVER_PORT=8000
 ANALYTICS_UI_ENDPOINT=http://analytics-ui:${{ANALYTICS_UI_PORT}}
 
-ANALYTICS_ENGINE_ENDPOINT=http://host.docker.internal:8080
-IBIS_SERVER_ENDPOINT=http://host.docker.internal:8000
-ANALYTICS_AI_ENDPOINT=http://localhost:{}
+ANALYTICS_ENGINE_ENDPOINT=http://analytics-engine:${{ANALYTICS_ENGINE_PORT}}
+IBIS_SERVER_ENDPOINT=http://ibis-server:${{IBIS_SERVER_PORT}}
+ANALYTICS_AI_ENDPOINT=http://analytics-service:${{ANALYTICS_AI_SERVICE_PORT}}
 
 # ai service settings
 QDRANT_HOST=qdrant
@@ -467,11 +467,22 @@ AI_SERVICE_FORWARD_PORT={}
 
 # Analytics UI
 EXPERIMENTAL_ENGINE_RUST_VERSION=false
+DB_TYPE=pg
+PG_URL=postgres://demo:demo123@northwind-db:5432/northwind
+NEXT_PUBLIC_TELEMETRY_ENABLED=false
 
 # Analytics Engine
 LOCAL_STORAGE=.
+
+# Northwind Database
+POSTGRES_DB=northwind
+POSTGRES_USER=demo
+POSTGRES_PASSWORD=demo123
+
+# Analytics Service
+PYTHONUNBUFFERED=1
+CONFIG_PATH=/app/config.yaml
 "#,
-            self.form_data.ai_service_port,
             self.form_data.ai_service_port,
             self.form_data.openai_api_key,
             uuid::Uuid::new_v4()
