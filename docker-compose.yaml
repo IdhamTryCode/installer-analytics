@@ -1,0 +1,115 @@
+volumes:
+  data:
+  northwind_data:
+
+
+networks:
+  analytics:
+    driver: bridge
+
+services:
+  # bootstrap:
+  #   build:
+  #     context: ./docker/bootstrap
+  #     dockerfile: Dockerfile
+  #   image: analytics-bootstrap:local
+  #   restart: on-failure
+  #   platform: linux/amd64
+  #   environment:
+  #     DATA_PATH: /app/data
+  #   volumes:
+  #     - data:/app/data
+  #   command: /bin/sh /app/init.sh
+
+  # analytics-engine:
+  #   image: ghcr.io/canner/analytics-engine:0.18.3
+  #   restart: on-failure
+  #   platform: linux/amd64
+  #   expose:
+  #     - 8080
+  #     - 7432
+  #   volumes:
+  #     - data:/usr/src/app/etc
+  #     - ./data:/usr/src/app/data
+  #   networks:
+  #     - analytics
+  #   depends_on:
+  #     - bootstrap
+
+  # ibis-server:
+  #   image: ghcr.io/canner/analytics-engine-ibis:0.18.3
+  #   restart: on-failure
+  #   platform: linux/amd64
+  #   expose:
+  #     - 8000
+  #   environment:
+  #     ANALYTICS_ENGINE_ENDPOINT: http://analytics-engine:8080
+  #   volumes:
+  #     - .:/usr/src/app/data
+  #   networks:
+  #     - analytics
+
+  analytics-service:
+    image: ghcr.io/h-pun/analytics-service:main-ffe8ce0
+    restart: on-failure
+    platform: linux/amd64
+    expose:
+      - 5555
+    ports:
+      - "5555:5555"
+    environment:
+      PYTHONUNBUFFERED: 1
+      CONFIG_PATH: /app/config.yaml
+      ANALYTICS_UI_ENDPOINT: http://analytics-ui:3000
+    env_file:
+      - .env
+    volumes:
+      - ./config.yaml:/app/config.yaml:ro
+      - ./data:/app/data:ro
+    networks:
+      - analytics
+    depends_on:
+      - qdrant
+
+  qdrant:
+    image: qdrant/qdrant:v1.11.0
+    restart: on-failure
+    expose:
+      - 6333
+      - 6334
+    volumes:
+      - data:/qdrant/storage
+    networks:
+      - analytics
+
+  # Northwind PostgreSQL Demo Database
+  northwind-db:
+    image: postgres:15
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: northwind
+      POSTGRES_USER: demo
+      POSTGRES_PASSWORD: demo123
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./northwind.sql:/docker-entrypoint-initdb.d/northwind.sql:ro
+      - northwind_data:/var/lib/postgresql/data
+    networks:
+      - analytics
+
+  analytics-ui:
+    image: ghcr.io/h-pun/analytics-ui:main-ffe8ce0
+    restart: on-failure
+    platform: linux/amd64
+    env_file:
+      - .env
+    ports:
+      - "3000:3000"
+    volumes:
+      - data:/app/data
+    networks:
+      - analytics
+    depends_on:
+      - analytics-service
+      # - analytics-engine
