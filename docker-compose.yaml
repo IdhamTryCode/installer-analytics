@@ -1,5 +1,6 @@
 volumes:
   data:
+  qdrant_data:
   northwind_data:
 
 
@@ -8,18 +9,17 @@ networks:
     driver: bridge
 
 services:
-  # bootstrap:
-  #   build:
-  #     context: ./docker/bootstrap
-  #     dockerfile: Dockerfile
-  #   image: analytics-bootstrap:local
-  #   restart: on-failure
-  #   platform: linux/amd64
-  #   environment:
-  #     DATA_PATH: /app/data
-  #   volumes:
-  #     - data:/app/data
-  #   command: /bin/sh /app/init.sh
+  bootstrap:
+    build:
+      context: ./bootstrap
+      dockerfile: Dockerfile
+    restart: on-failure
+    platform: linux/amd64
+    environment:
+      DATA_PATH: /app/data
+    volumes:
+      - data:/app/data
+    command: /bin/sh /app/init.sh
 
   analytics-engine:
     image: ghcr.io/idhamtrycode/analytics-engine:latest
@@ -34,6 +34,8 @@ services:
       - ${PROJECT_DIR}/data:/usr/src/app/data
     networks:
       - analytics
+    depends_on:
+      - bootstrap
 
   ibis-server:
     image: ghcr.io/idhamtrycode/analytics-engine-ibis:latest
@@ -73,7 +75,7 @@ services:
       - 6333
       - 6334
     volumes:
-      - data:/qdrant/storage
+      - qdrant_data:/qdrant/storage
     networks:
       - analytics
 
