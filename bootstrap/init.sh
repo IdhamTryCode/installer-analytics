@@ -11,7 +11,13 @@ fi
 
 # after the config.properties is created, check if config properties properly set
 # if not, then append default values to the config.properties
-# Note: analytics.experimental-enable-dynamic-fields removed as it's not supported in current analytics-engine version
+# Note: analytics.experimental-enable-dynamic-fields and wren.experimental-enable-dynamic-fields removed as it's not supported in current analytics-engine version
+
+# Remove unsupported properties if they exist
+if [ -f ${data_path}/config.properties ]; then
+  sed -i '/wren.experimental-enable-dynamic-fields/d' ${data_path}/config.properties
+  sed -i '/analytics.experimental-enable-dynamic-fields/d' ${data_path}/config.properties
+fi
 
 # create a folder mdl if not exists
 if [ ! -d ${data_path}/mdl ]; then
