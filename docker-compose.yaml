@@ -53,7 +53,7 @@ services:
       - analytics-engine
 
   analytics-service:
-    image: ghcr.io/h-pun/analytics-service:main-ffe8ce0
+    image: ghcr.io/h-pun/analytics-service:latest
     restart: on-failure
     platform: linux/amd64
     env_file:
@@ -94,7 +94,7 @@ services:
       - analytics
 
   analytics-ui:
-    image: ghcr.io/h-pun/analytics-ui:main-ffe8ce0
+    image: ghcr.io/h-pun/analytics-ui:latest
     restart: on-failure
     platform: linux/amd64
     env_file:
