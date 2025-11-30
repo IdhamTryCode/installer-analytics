@@ -1,0 +1,34 @@
+type: llm
+provider: litellm_llm
+models:
+  - api_base: https://api.groq.com/openai/v1
+    model: groq/llama-3.3-70b-specdec
+    alias: default
+    timeout: 120
+    kwargs:
+      n: 1
+      temperature: 0
+
+---
+type: embedder
+provider: litellm_embedder
+models:
+  - model: text-embedding-3-large
+    alias: default
+    api_base: https://api.openai.com/v1
+    timeout: 120
+
+---
+type: document_store
+provider: qdrant
+location: http://qdrant:6333
+embedding_model_dim: 3072
+timeout: 120
+recreate_index: true
+
+---
+{{ENGINE_SECTION}}
+---
+{{PIPELINE_SECTION}}
+---
+{{SETTINGS_SECTION}}

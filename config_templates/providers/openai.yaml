@@ -1,0 +1,35 @@
+type: llm
+provider: litellm_llm
+timeout: 120
+models:
+  - alias: default
+    model: gpt-4o-mini
+    context_window_size: 128000
+    kwargs:
+      max_tokens: 4096
+      n: 1
+      seed: 0
+      temperature: 0
+
+---
+type: embedder
+provider: litellm_embedder
+models:
+  - model: text-embedding-3-large
+    alias: default
+    timeout: 120
+
+---
+type: document_store
+provider: qdrant
+location: http://qdrant:6333
+embedding_model_dim: 3072
+timeout: 120
+recreate_index: true
+
+---
+{{ENGINE_SECTION}}
+---
+{{PIPELINE_SECTION}}
+---
+{{SETTINGS_SECTION}}

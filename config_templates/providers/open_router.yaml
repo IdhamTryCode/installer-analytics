@@ -1,0 +1,34 @@
+type: llm
+provider: litellm_llm
+timeout: 120
+models:
+  - api_base: https://openrouter.ai/api/v1
+    model: openrouter/anthropic/claude-3.7-sonnet
+    alias: default
+    timeout: 600
+    kwargs:
+      n: 1
+      temperature: 0
+
+---
+type: embedder
+provider: litellm_embedder
+models:
+  - model: gemini/text-embedding-004
+    alias: default
+    timeout: 120
+
+---
+type: document_store
+provider: qdrant
+location: http://qdrant:6333
+embedding_model_dim: 768
+timeout: 120
+recreate_index: true
+
+---
+{{ENGINE_SECTION}}
+---
+{{PIPELINE_SECTION}}
+---
+{{SETTINGS_SECTION}}

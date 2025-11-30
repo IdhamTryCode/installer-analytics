@@ -1,0 +1,8 @@
+type: engine
+provider: analytics_ui
+endpoint: http://analytics-ui:3000
+
+---
+type: engine
+provider: analytics_ibis
+endpoint: http://ibis-server:8000

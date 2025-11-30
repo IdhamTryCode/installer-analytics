@@ -1,0 +1,41 @@
+type: llm
+provider: litellm_llm
+timeout: 120
+models:
+  - model: bedrock/us.anthropic.claude-3-7-sonnet-20250219-v1:0
+    api_base: https://bedrock-runtime.<region-name>.amazonaws.com
+    alias: default
+    kwargs:
+      temperature: 0.1
+      aws_region_name: <region-name>
+      aws_bedrock_runtime_endpoint: https://bedrock-runtime.<region-name>.amazonaws.com
+      aws_role_name: <iam-role-arn>
+
+---
+type: embedder
+provider: litellm_embedder
+models:
+  - model: bedrock/amazon.titan-embed-text-v2:0
+    api_base: https://bedrock-runtime.<region-name>.amazonaws.com
+    timeout: 600
+    alias: default
+    kwargs:
+      temperature: 0.1
+      aws_region_name: <region-name>
+      aws_role_name: <iam-role-arn>
+      aws_bedrock_runtime_endpoint: https://bedrock-runtime.<region-name>.amazonaws.com
+
+---
+type: document_store
+provider: qdrant
+location: http://qdrant:6333
+embedding_model_dim: 1024
+timeout: 120
+recreate_index: true
+
+---
+{{ENGINE_SECTION}}
+---
+{{PIPELINE_SECTION}}
+---
+{{SETTINGS_SECTION}}

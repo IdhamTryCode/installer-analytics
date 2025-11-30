@@ -1,0 +1,40 @@
+type: llm
+provider: litellm_llm
+models:
+  - model: gemini/gemini-2.0-flash
+    alias: default
+    timeout: 120
+    kwargs:
+      n: 1
+      temperature: 0
+  - model: gemini/gemini-2.0-flash
+    alias: gemini-llm-for-chart
+    timeout: 120
+    kwargs:
+      n: 1
+      temperature: 0
+      response_format:
+        type: json_object
+
+---
+type: embedder
+provider: litellm_embedder
+models:
+  - model: gemini/text-embedding-004
+    alias: default
+    timeout: 120
+
+---
+type: document_store
+provider: qdrant
+location: http://qdrant:6333
+embedding_model_dim: 768
+timeout: 120
+recreate_index: true
+
+---
+{{ENGINE_SECTION}}
+---
+{{PIPELINE_SECTION}}
+---
+{{SETTINGS_SECTION}}

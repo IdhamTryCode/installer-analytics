@@ -1,0 +1,71 @@
+type: llm
+provider: litellm_llm
+models:
+  - api_base: https://openrouter.ai/api/v1
+    model: openrouter/qwen/qwen3-30b-a3b
+    alias: default
+    timeout: 600
+    kwargs:
+      n: 1
+      temperature: 0.6
+      top_p: 0.95
+      top_k: 20
+      response_format:
+        type: text
+  - api_base: https://openrouter.ai/api/v1
+    model: openrouter/qwen/qwen3-30b-a3b
+    alias: qwen3-thinking
+    timeout: 600
+    kwargs:
+      n: 1
+      temperature: 0.6
+      top_p: 0.95
+      top_k: 20
+      response_format:
+        type: text
+  - api_base: https://openrouter.ai/api/v1
+    model: openrouter/qwen/qwen3-30b-a3b
+    alias: qwen3-fast
+    timeout: 600
+    kwargs:
+      n: 1
+      temperature: 0.7
+      top_p: 0.8
+      top_k: 20
+      response_format:
+        type: text
+  - api_base: https://openrouter.ai/api/v1
+    model: openrouter/qwen/qwen3-32b
+    alias: qwen3-32b
+    timeout: 600
+    kwargs:
+      n: 1
+      temperature: 0.6
+      top_p: 0.95
+      top_k: 20
+      response_format:
+        type: json_object
+
+---
+type: embedder
+provider: litellm_embedder
+models:
+  - model: text-embedding-3-large
+    alias: default
+    api_base: https://api.openai.com/v1
+    timeout: 120
+
+---
+type: document_store
+provider: qdrant
+location: http://qdrant:6333
+embedding_model_dim: 3072
+timeout: 120
+recreate_index: true
+
+---
+{{ENGINE_SECTION}}
+---
+{{PIPELINE_SECTION}}
+---
+{{SETTINGS_SECTION}}

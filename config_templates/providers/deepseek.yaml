@@ -1,0 +1,52 @@
+type: llm
+provider: litellm_llm
+models:
+  - api_base: https://api.deepseek.com/v1
+    model: deepseek/deepseek-reasoner
+    timeout: 120
+    kwargs:
+      n: 1
+      temperature: 0
+      response_format:
+        type: text
+  - api_base: https://api.deepseek.com/v1
+    model: deepseek/deepseek-chat
+    timeout: 120
+    kwargs:
+      n: 1
+      temperature: 0
+      response_format:
+        type: text
+  - api_base: https://api.deepseek.com/v1
+    model: deepseek/deepseek-coder
+    alias: default
+    timeout: 120
+    kwargs:
+      n: 1
+      temperature: 0
+      response_format:
+        type: json_object
+
+---
+type: embedder
+provider: litellm_embedder
+models:
+  - model: text-embedding-3-large
+    alias: default
+    api_base: https://api.openai.com/v1
+    timeout: 120
+
+---
+type: document_store
+provider: qdrant
+location: http://qdrant:6333
+embedding_model_dim: 3072
+timeout: 120
+recreate_index: true
+
+---
+{{ENGINE_SECTION}}
+---
+{{PIPELINE_SECTION}}
+---
+{{SETTINGS_SECTION}}

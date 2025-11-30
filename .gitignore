@@ -4,8 +4,9 @@ Cargo.lock
 
 # Environment files
 .env
-.env.local
-.env.*.local
+config.yaml
+# .env.local
+# .env.*.local
 
 # IDE
 .vscode/

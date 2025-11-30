@@ -1,0 +1,76 @@
+type: llm
+provider: litellm_llm
+models:
+  - api_base: https://open.bigmodel.cn/api/paas/v4/
+    model: openai/glm-4.5
+    alias: default
+    timeout: 900
+    kwargs:
+      n: 1
+      temperature: 0.1
+      top_p: 0.8
+      extra_body:
+        chat_template_kwargs:
+          enable_thinking: false
+      allowed_openai_params: ["extra_body"]
+  - api_base: https://open.bigmodel.cn/api/paas/v4/
+    model: openai/glm-4.5
+    alias: glm45-fast
+    timeout: 900
+    kwargs:
+      n: 1
+      temperature: 0.1
+      top_p: 0.8
+      extra_body:
+        chat_template_kwargs:
+          enable_thinking: false
+      allowed_openai_params: ["extra_body"]
+  - api_base: https://open.bigmodel.cn/api/paas/v4/
+    model: openai/glm-4.5
+    alias: glm45-thinking
+    timeout: 1200
+    kwargs:
+      n: 1
+      temperature: 0.3
+      top_p: 0.9
+      extra_body:
+        chat_template_kwargs:
+          enable_thinking: true
+      allowed_openai_params: ["extra_body"]
+  - api_base: https://open.bigmodel.cn/api/paas/v4/
+    model: openai/glm-4.5
+    alias: glm45-json
+    timeout: 900
+    kwargs:
+      n: 1
+      temperature: 0.05
+      top_p: 0.7
+      response_format:
+        type: json_object
+      extra_body:
+        chat_template_kwargs:
+          enable_thinking: false
+      allowed_openai_params: ["extra_body"]
+
+---
+type: embedder
+provider: litellm_embedder
+models:
+  - model: text-embedding-3-large
+    alias: default
+    timeout: 120
+
+---
+type: document_store
+provider: qdrant
+location: http://qdrant:6333
+embedding_model_dim: 3072
+timeout: 120
+recreate_index: true
+
+---
+{{ENGINE_SECTION}}
+---
+{{PIPELINE_SECTION}}
+---
+{{SETTINGS_SECTION}}

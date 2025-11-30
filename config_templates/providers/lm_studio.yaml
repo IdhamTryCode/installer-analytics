@@ -1,0 +1,34 @@
+type: llm
+provider: litellm_llm
+models:
+  - api_base: http://host.docker.internal:1234/v1
+    model: openai/phi-4
+    alias: default
+    timeout: 600
+    kwargs:
+      n: 1
+      temperature: 0
+
+---
+type: embedder
+provider: litellm_embedder
+models:
+  - model: openai/text-embedding-nomic-embed-text-v1.5
+    alias: default
+    api_base: http://host.docker.internal:1234/v1
+    timeout: 600
+
+---
+type: document_store
+provider: qdrant
+location: http://qdrant:6333
+embedding_model_dim: 768
+timeout: 120
+recreate_index: true
+
+---
+{{ENGINE_SECTION}}
+---
+{{PIPELINE_SECTION}}
+---
+{{SETTINGS_SECTION}}

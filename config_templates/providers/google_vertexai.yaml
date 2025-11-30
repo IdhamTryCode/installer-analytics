@@ -1,0 +1,44 @@
+type: llm
+provider: litellm_llm
+models:
+  - model: vertex_ai/gemini-2.5-flash
+    alias: default
+    timeout: 120
+    kwargs:
+      n: 1
+      temperature: 0
+      seed: 0
+      max_tokens: 4096
+  - model: vertex_ai/gemini-2.5-flash
+    alias: gemini-llm-for-chart
+    timeout: 120
+    kwargs:
+      n: 1
+      temperature: 0
+      seed: 0
+      max_tokens: 4096
+      response_format:
+        type: json_object
+
+---
+type: embedder
+provider: litellm_embedder
+models:
+  - model: vertex_ai/text-embedding-004
+    alias: default
+    timeout: 120
+
+---
+type: document_store
+provider: qdrant
+location: http://qdrant:6333
+embedding_model_dim: 768
+timeout: 120
+recreate_index: true
+
+---
+{{ENGINE_SECTION}}
+---
+{{PIPELINE_SECTION}}
+---
+{{SETTINGS_SECTION}}
